@@ -1,0 +1,12 @@
+D:\GitHub\Mzitu\Mzitu\bin\Debug\Mzitu.exe.config
+D:\GitHub\Mzitu\Mzitu\bin\Debug\Mzitu.exe
+D:\GitHub\Mzitu\Mzitu\bin\Debug\Mzitu.pdb
+D:\GitHub\Mzitu\Mzitu\bin\Debug\HtmlAgilityPack.dll
+D:\GitHub\Mzitu\Mzitu\bin\Debug\HtmlAgilityPack.pdb
+D:\GitHub\Mzitu\Mzitu\bin\Debug\HtmlAgilityPack.xml
+D:\GitHub\Mzitu\Mzitu\obj\Debug\Mzitu.csprojResolveAssemblyReference.cache
+D:\GitHub\Mzitu\Mzitu\obj\Debug\Mzitu.MainForm.resources
+D:\GitHub\Mzitu\Mzitu\obj\Debug\Mzitu.Properties.Resources.resources
+D:\GitHub\Mzitu\Mzitu\obj\Debug\Mzitu.csproj.GenerateResource.Cache
+D:\GitHub\Mzitu\Mzitu\obj\Debug\Mzitu.exe
+D:\GitHub\Mzitu\Mzitu\obj\Debug\Mzitu.pdb

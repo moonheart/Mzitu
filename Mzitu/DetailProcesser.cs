@@ -44,10 +44,7 @@ namespace Mzitu
             {
                 if (_savaPicPath != value)
                 {
-                    if (OnSavePathChanged != null)
-                    {
-                        OnSavePathChanged(this, new StringEventArgs(value));
-                    }
+                    OnSavePathChanged?.Invoke(this, new StringEventArgs(value));
                     _savaPicPath = value;
                 }
             }
