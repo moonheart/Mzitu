@@ -105,16 +105,16 @@
             // 
             this.txtSavePath.Location = new System.Drawing.Point(68, 253);
             this.txtSavePath.Name = "txtSavePath";
-            this.txtSavePath.Size = new System.Drawing.Size(389, 21);
+            this.txtSavePath.Size = new System.Drawing.Size(688, 21);
             this.txtSavePath.TabIndex = 5;
-            this.txtSavePath.Text = "D:\\Pictures\\Meizitu\\";
+            this.txtSavePath.Text = "D:\\Pictures\\Mzitu\\";
             // 
             // txtCustAddress
             // 
             this.txtCustAddress.Enabled = false;
             this.txtCustAddress.Location = new System.Drawing.Point(37, 75);
             this.txtCustAddress.Name = "txtCustAddress";
-            this.txtCustAddress.Size = new System.Drawing.Size(262, 21);
+            this.txtCustAddress.Size = new System.Drawing.Size(217, 21);
             this.txtCustAddress.TabIndex = 5;
             this.txtCustAddress.Text = "http://www.mzitu.com/62984";
             // 
@@ -125,7 +125,7 @@
             this.groupBox1.Controls.Add(this.txtCustAddress);
             this.groupBox1.Location = new System.Drawing.Point(15, 41);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(442, 106);
+            this.groupBox1.Size = new System.Drawing.Size(741, 106);
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "抓取方式";
@@ -185,7 +185,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(469, 286);
+            this.ClientSize = new System.Drawing.Size(768, 286);
             this.Controls.Add(this.lblSavePath);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
@@ -199,7 +199,7 @@
             this.Controls.Add(this.btnStart);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "批量抓取美女图片";
+            this.Text = "批量抓取图片";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -62,9 +63,12 @@ namespace Mzitu
             {
                 if (_detailUrl != value)
                 {
-                    if (OnUrlChanged != null)
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
-                        OnUrlChanged(this, new StringEventArgs(value));
+                        if (OnUrlChanged != null)
+                        {
+                            OnUrlChanged(this, new StringEventArgs(value));
+                        }
                     }
                     _detailUrl = value;
                 }
@@ -88,14 +92,41 @@ namespace Mzitu
         {
             new Thread(() =>
             {
-                var pagehtml = HttpRequestHelper.Get_Data(DetailUrl, null, "utf-8", null);
+                var pagehtml = GetPageHtml(DetailUrl);
+                if (string.IsNullOrWhiteSpace(pagehtml))
+                {
+
+                }
                 DetailUrl = GetNextPageUrl(pagehtml);
+                if (string.IsNullOrWhiteSpace(DetailUrl))
+                {
+
+                }
                 do
                 {
                     var picUrl = GetPicUrl(pagehtml);
-                    DownloadOnePic(picUrl);
-                    pagehtml = HttpRequestHelper.Get_Data(DetailUrl, null, "utf-8", null);
+                    if (string.IsNullOrWhiteSpace(picUrl))
+                    {
+
+                    }
+                    var title = GetPicTitle(pagehtml);
+                    if (string.IsNullOrWhiteSpace(title))
+                    {
+
+                    }
+
+                    new Thread(DownloadOnePic).Start(new[] { picUrl, title });
+                    //DownloadOnePic(picUrl);
+                    pagehtml = GetPageHtml(DetailUrl);
+                    if (string.IsNullOrWhiteSpace(pagehtml))
+                    {
+
+                    }
                     DetailUrl = GetNextPageUrl(pagehtml);
+                    if (string.IsNullOrWhiteSpace(DetailUrl))
+                    {
+
+                    }
                     if (_stop)
                     {
                         _stop = false;
@@ -105,6 +136,36 @@ namespace Mzitu
                 } while (!string.IsNullOrEmpty(DetailUrl));
             }).Start();
 
+        }
+
+        private string GetPageHtml(string url)
+        {
+
+            for (int i = 0; i < 10; i++)
+            {
+                var h = HttpRequestHelper.Get_Data(url, null, "utf-8", null);
+                if (string.IsNullOrWhiteSpace(h))
+                {
+                    Thread.Sleep(1000);
+                    continue;
+                }
+                return h;
+            }
+            throw new Exception(url);
+        }
+
+        private string GetPicTitle(string pagehtml)
+        {
+            var res = "";
+
+            HtmlDocument document = new HtmlDocument();
+            document.LoadHtml(pagehtml);
+            var picNode = document.DocumentNode.SelectSingleNode("//h2[@class='main-title']");
+            if (picNode != null)
+            {
+                res = picNode.InnerText;
+            }
+            return res;
         }
 
         /// <summary>
@@ -118,11 +179,17 @@ namespace Mzitu
         /// 下载图片
         /// </summary>
         /// <param name="picUrl">图片url</param>
-        private void DownloadOnePic(string picUrl)
+        private void DownloadOnePic(object obj)
         {
+            var arr = (string[])obj;
+            string picUrl = arr[0];
+            string title = arr[1];
             if (!Directory.Exists(SavePath))
                 Directory.CreateDirectory(SavePath);
-            SavePicPath = string.Format("{0}\\{1}", SavePath, picUrl.Replace("http://pic.mmfile.net/", "").Replace("/", "_"));
+            var s = Regex.Match(picUrl, @"(?<year>[0-9]{4})/(?<month>[0-9]{1,2})/(?<name>.+)\..+");
+            var name = s.Groups["year"].Value + s.Groups["month"].Value + s.Groups["name"].Value;
+            SavePicPath = string.Format("{0}\\{3}_{1}.{2}", SavePath, title, picUrl.Split('.').Last(),
+              name);
             var sp = SavePicPath;
             if (File.Exists(SavePicPath))
             {
@@ -130,10 +197,8 @@ namespace Mzitu
                 return;
             }
             SavePicPath += " 下载中...";
-            if (string.IsNullOrEmpty(picUrl))
-                return;
             var time = 3;
-        GOTO_RETRY:
+            GOTO_RETRY:
             var stream = HttpRequestHelper.Get_ImgStream(picUrl, null);
             Image image = null;
             try
@@ -151,7 +216,7 @@ namespace Mzitu
                     image.Save(sp, image.RawFormat);
                     SavePicPath += " 完成";
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     if (time == 0)
                     {
@@ -168,7 +233,6 @@ namespace Mzitu
         private string GetPicUrl(string pagehtml)
         {
             var res = "";
-
             HtmlDocument document = new HtmlDocument();
             document.LoadHtml(pagehtml);
             var picNode = document.DocumentNode.SelectSingleNode("//div[@class='main-image']//img");
@@ -183,15 +247,12 @@ namespace Mzitu
         {
             var res = "";
 
-            if (!string.IsNullOrEmpty(html))
+            HtmlDocument document = new HtmlDocument();
+            document.LoadHtml(html);
+            var picNode = document.DocumentNode.SelectSingleNode("//div[@class='pagenavi']/a[last()]");
+            if (picNode != null)
             {
-                HtmlDocument document = new HtmlDocument();
-                document.LoadHtml(html);
-                var picNode = document.DocumentNode.SelectSingleNode("//div[@class='pagenavi']/a[last()]");
-                if (picNode != null)
-                {
-                    res = picNode.GetAttributeValue("href", "");
-                }
+                res = picNode.GetAttributeValue("href", "");
             }
 
             return res;
