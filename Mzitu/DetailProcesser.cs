@@ -21,6 +21,10 @@ namespace Mzitu
         /// 当前详细页链接变化时触发此事件
         /// </summary>
         public event EventHandler<StringEventArgs> OnUrlChanged;
+        private Dictionary<string[], Thread> _taskList = new Dictionary<string[], Thread>();
+
+        private int max = 50;
+        private int now = 0;
 
         public event EventHandler<StringEventArgs> OnSavePathChanged;
 
@@ -93,40 +97,18 @@ namespace Mzitu
             new Thread(() =>
             {
                 var pagehtml = GetPageHtml(DetailUrl);
-                if (string.IsNullOrWhiteSpace(pagehtml))
-                {
-
-                }
                 DetailUrl = GetNextPageUrl(pagehtml);
-                if (string.IsNullOrWhiteSpace(DetailUrl))
-                {
-
-                }
                 do
                 {
                     var picUrl = GetPicUrl(pagehtml);
-                    if (string.IsNullOrWhiteSpace(picUrl))
-                    {
-
-                    }
                     var title = GetPicTitle(pagehtml);
-                    if (string.IsNullOrWhiteSpace(title))
-                    {
 
-                    }
-
-                    new Thread(DownloadOnePic).Start(new[] { picUrl, title });
+                    var th = new Thread(DownloadOnePic);
+                    //_taskList.Add(new[] { picUrl, title }, th);
+                    ListOperation(new[] { picUrl, title }, th, Op.Add);
                     //DownloadOnePic(picUrl);
                     pagehtml = GetPageHtml(DetailUrl);
-                    if (string.IsNullOrWhiteSpace(pagehtml))
-                    {
-
-                    }
                     DetailUrl = GetNextPageUrl(pagehtml);
-                    if (string.IsNullOrWhiteSpace(DetailUrl))
-                    {
-
-                    }
                     if (_stop)
                     {
                         _stop = false;
@@ -134,23 +116,79 @@ namespace Mzitu
                     }
 
                 } while (!string.IsNullOrEmpty(DetailUrl));
-            }).Start();
+            })
+            { IsBackground = true }.Start();
+
+            new Thread(() =>
+            {
+                for (;;)
+                {
+                    if (_stop)
+                    {
+                        break;
+                    }
+                    int max = 50;
+                    int now = 0;
+                    var t = ListOperation(null, null, Op.Get);
+                    if (t.Key != null)
+                    {
+                        if (now < max)
+                        {
+                            ListOperation(t.Key, null, Op.Remove);
+                            //_taskList.Remove(t.Key);
+                            t.Value.Start(t.Key);
+                        }
+                    }
+                    Thread.Sleep(100);
+                }
+
+            })
+            { IsBackground = true }.Start();
 
         }
 
+        private enum Op
+        {
+            Add,
+            Remove,
+            Get
+        }
+
+        private object lockObj = new object();
+        private KeyValuePair<string[], Thread> ListOperation(string[] ss, Thread tt, Op op)
+        {
+            lock (lockObj)
+            {
+                KeyValuePair<string[], Thread> d = new KeyValuePair<string[], Thread>();
+                switch (op)
+                {
+                    case Op.Add:
+                        _taskList.Add(ss, tt);
+                        break;
+                    case Op.Remove:
+                        _taskList.Remove(ss);
+                        break;
+                    case Op.Get:
+                        d = _taskList.FirstOrDefault();
+                        break;
+                }
+                return d;
+            }
+        }
+
+
         private string GetPageHtml(string url)
         {
-
             for (int i = 0; i < 10; i++)
             {
                 var h = HttpRequestHelper.Get_Data(url, null, "utf-8", null);
-                if (string.IsNullOrWhiteSpace(h))
+                if (!string.IsNullOrWhiteSpace(h))
                 {
-                    Thread.Sleep(1000);
-                    continue;
+                    return h;
                 }
-                return h;
+                Thread.Sleep(1000);
             }
+            //return "";
             throw new Exception(url);
         }
 
@@ -175,12 +213,14 @@ namespace Mzitu
         {
             _stop = true;
         }
+
         /// <summary>
         /// 下载图片
         /// </summary>
         /// <param name="picUrl">图片url</param>
         private void DownloadOnePic(object obj)
         {
+            now++;
             var arr = (string[])obj;
             string picUrl = arr[0];
             string title = arr[1];
@@ -188,8 +228,7 @@ namespace Mzitu
                 Directory.CreateDirectory(SavePath);
             var s = Regex.Match(picUrl, @"(?<year>[0-9]{4})/(?<month>[0-9]{1,2})/(?<name>.+)\..+");
             var name = s.Groups["year"].Value + s.Groups["month"].Value + s.Groups["name"].Value;
-            SavePicPath = string.Format("{0}\\{3}_{1}.{2}", SavePath, title, picUrl.Split('.').Last(),
-              name);
+            SavePicPath = string.Format("{0}\\{3}_{1}.{2}", SavePath, title, picUrl.Split('.').Last(), name);
             var sp = SavePicPath;
             if (File.Exists(SavePicPath))
             {
@@ -199,7 +238,7 @@ namespace Mzitu
             SavePicPath += " 下载中...";
             var time = 3;
             GOTO_RETRY:
-            var stream = HttpRequestHelper.Get_ImgStream(picUrl, null);
+            var stream = GetImgStream(picUrl);
             Image image = null;
             try
             {
@@ -228,6 +267,22 @@ namespace Mzitu
                     goto GOTO_RETRY;
                 }
             }
+            now--;
+        }
+
+        private Stream GetImgStream(string picUrl)
+        {
+            Stream s = null;
+            for (int i = 0; i < 10; i++)
+            {
+                s = HttpRequestHelper.Get_ImgStream(picUrl, null);
+                if (s != null)
+                {
+                    return s;
+                }
+                Thread.Sleep(1000);
+            }
+            throw new Exception(picUrl);
         }
 
         private string GetPicUrl(string pagehtml)
